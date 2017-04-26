@@ -1,364 +1,327 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * N-th order Markov Model
  */
-
 package markovchain;
 
-import java.util.Scanner;
-import java.util.HashMap;
 import java.util.Random;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.Vector;
-import java.util.ArrayList;
-
+import java.util.LinkedList;
 
 import java.io.*;
-import java.text.DecimalFormat;
 import java.util.*;
 
 /**
- *
  * @author ducnguyen
+ * @version 1.0
  */
 public class MarkovChain {
-//    public int order = 1;
-    
-    // Hashmap for first-order markov chain
-    public static HashMap<String, Vector<String>> hmap = new HashMap<String, Vector<String>>();
-//    public static HashMap<Vector<String>, Vector<String>> hmap = new HashMap<Vector<String>, Vector<String>>();
+    public static int order = 3;
 
-    
+    // HashMap for freguency
+    public static LinkedHashMap<LinkedList<String>, Integer> frequencyMap = new LinkedHashMap<>();        
+
     // Random value
     static Random rnd = new Random();
-    
-    public static void main(String[] args) throws FileNotFoundException, IOException {  
-        // Get file path
-        String filePath = new java.io.File("").getAbsolutePath() + "/src/markovchain/text/";
-        
-        // Get file name
-        String fileName = filePath + "test_1.txt";
+
+    /**
+     * main()
+     * 
+     * @param args
+     * @throws FileNotFoundException
+     * @throws IOException 
+     */
+    public static void main(String[] args) throws FileNotFoundException, IOException {
+
+        BufferedReader br = getBufferedReader();
+
+        System.out.println("#################");
+        System.out.println("# order: " + order + "\t#");
+        System.out.println("#################\n");
         
         String line;
-       
-        FileReader fr = new FileReader(fileName);
-        BufferedReader br = new BufferedReader(fr); 
-
-        while((line = br.readLine()) != null) {
+        
+        while ((line = br.readLine()) != null) {   
+            System.out.println("######################################");
+            System.out.println("# Original Text: " + line + "\n");
+            
             markovChain(line);
         }
-    }   
+    }
     
-//    public static void addWordToMarkovChain(String word, Double p, String author) {
-//        Vector<String> chainArray = hmap.get("chain");
-//        chainArray.add(word);
-//
-//        Vector matrixArray = hmap.get("matrix");
-//        matrixArray.add(new Double(0.5));
-//
-//        Vector<String> authorArray = hmap.get("author");
-//        authorArray.add(author);
-//    }
-    
-    /*
-     * Add words
+    /**
+     * 
+     * @return
+     * @throws FileNotFoundException 
+     */
+    public static BufferedReader getBufferedReader() throws FileNotFoundException {
+        // Get file path
+        String filePath = new java.io.File("").getAbsolutePath() + "/src/markovchain/text/";
+
+        // Get file name
+        String fileName = filePath + "test_3.txt";
+
+//        String line;
+
+        FileReader fr = new FileReader(fileName);
+        BufferedReader br = new BufferedReader(fr);
+        
+        return br;
+    }
+
+    /**
+     * Generate Markov Model
+     * 
+     * @param line 
      */
     public static void markovChain(String line) {
-        // put each word into an array
-        String[] words = line.trim().split("[\\s\\.]+");
-//        String[] words = line.trim().split("\\s");
+        // Define a LinkedHashMap 
+        LinkedHashMap<LinkedList<String>, LinkedList<String>> hmap = new LinkedHashMap<>();        
 
-        Vector<String> first_arr = new Vector<String>();
-
-//        int order = 1;
-//        int k = 0;
+        // Generating Markov Data
+        LinkedList dataList = getDataList(line);
         
-        // loop        
-        for (int i = 0; i < words.length; i++) {
-//            String word = words[i];
-            
-//            System.out.println("i = " + i + " word[i] = " + words[i]);
-//            System.out.println("before: " + hmap);
-            
-//            if(words[i].contains(".")) {
-//                String newWord = words[i].replace(".", "");
-//                String dot = ".";
-//            }
-//            
+        // Generating Markov Frequency Map
+        getFrequencyMap(dataList);
+                
+        for (int N = 0; N < dataList.size(); N++) {
 
-            
-            
-            if(i == 0) {
-                hmap.put(words[i], new Vector<String>());   
-//                while(k < order) {
-//                    first_arr.add(words[i+k]);
-//                    k++;
-//                }
-//
-//                hmap.put(first_arr, new Vector<String>());   
+            // Adding the first array 
+            if (N == 0) {
+                if (N < dataList.size()) {
+                    if (order == 1) {
+                        String currentKey = dataList.get(N).toString();
+                        String nextKey = dataList.get(N + 1).toString();
+
+                        LinkedList<String> currentKeyArray = new LinkedList<>();
+                        LinkedList<String> nextValueArray = new LinkedList<>();
+
+                        currentKeyArray.add(currentKey);
+                        nextValueArray.add(nextKey);
+
+                        hmap.put(currentKeyArray, nextValueArray);
+                    } else {                        
+                        LinkedList<String> currentKeyArray = getKeyArray(N, dataList);
+
+                        int nextIndex = N + order;
+
+                        String nextValue = dataList.get(nextIndex).toString();
+
+                        LinkedList<String> nextValueArray = new LinkedList<>();
+
+                        nextValueArray.add(nextValue);
+
+                        hmap.put(currentKeyArray, nextValueArray);
+                    }
+                }
             } else {
-                if (hmap.containsKey(words[i])) {                
-//                    System.out.println("~~ true");
+                if (dataList.size() - N >= order) {
+                    LinkedList<String> currentKeyArray = getKeyArray(N, dataList);
 
-                    Vector<String> arr = hmap.get(words[i-1]);
-
-                    if(arr == null) {
-//                        System.out.println("words[i-1] = " + words[i-1]);
-//                        System.out.println("words[i] = " + words[i]);
-//                        if((i+1) < words.length) {
-//                            System.out.println("words[i+1] = " + words[i+1]);
-//                        }
+                    if (!hmap.containsKey(currentKeyArray)) {
+                        LinkedList<String> currentValueArr = hmap.get(currentKeyArray);
                         
-                        arr = new Vector<String>();
-                        arr.add(words[i]);
-    
-                        hmap.put(words[i-1], arr);
-                    }   
-                    
-                    System.out.println(hmap);
-                    
-                } else {
-//                    System.out.println("false");
-//                    System.out.println("words[i-1] = " + words[i-1]);
-//                    System.out.println("words[i] = " + words[i]);
-                    
-                    Vector<String> prevArr = hmap.get(words[i-1]);                    
-                    Vector<String> currentArr = hmap.get(words[i]);
-
-                    if((i+1) < words.length) {
-//                        System.out.println("words[i+1] = " + words[i+1]);
-                        Vector<String> nextArr = hmap.get(words[i+1]);
-
-//                        System.out.println("prevArr = " + prevArr);
-//                        System.out.println("currentArr = " + currentArr);
-//                        System.out.println("nextArr = " + nextArr);
-
-                        if(currentArr == null) {
-                            if(nextArr == null) {
-                                currentArr = new Vector<String>();
-                                currentArr.add(words[i]);
-
-                                hmap.put(words[i-1], currentArr);
+                        if (currentValueArr == null) {
+                            if (dataList.size() - N == order) {
+                                hmap.put(currentKeyArray, new LinkedList<>());
                             } else {
-                                if(prevArr == null) {
-                                    currentArr = new Vector<String>();
-                                    currentArr.add(words[i]);
-
-                                    hmap.put(words[i-1], currentArr);
-                                } else {
-                                    prevArr.add(words[i]);
-
-                                    hmap.put(words[i], currentArr);
+                                LinkedList<String> nextValueArr = new LinkedList<>();
+                                
+                                if((N + order) < dataList.size()) {                            
+                                    nextValueArr.add(dataList.get(N + order).toString());
+                            
+                                    hmap.put(currentKeyArray, nextValueArr);
                                 }
                             }
-                        }   
-                    }
-                }        
-            }
-        }
-        
-//        System.out.println(hmap + "\n");
-
-        generatetTransitionMatrix(hmap);
-    }
-
-    
-    public static void generatetTransitionMatrix(HashMap<String, Vector<String>> hmap) {
-        // Define dictionary to store all the words to be cross-checked
-        Vector<String> dictionary = new Vector<String>();
-
-        // initilize number of cols
-        int totalCol = hmap.size();
-                
-        // Add key to dictionary
-        for (String key : hmap.keySet()) {            
-            dictionary.add(key);
-        }
-                
-        // initilize number of rows
-        int totalRow = dictionary.size();
-        
-        // initialize transition matrix
-        float[][] m = new float[totalRow][totalCol];
-
-        // first row
-        int row = 0;
-        
-        // Loop through array to create the transition matrix
-        for (String key : hmap.keySet()) {
-            Vector<String> data = hmap.get(key);
-            
-            for(int i = 0; i < data.size(); i++) {
-                String word = data.get(i);
-                
-                for(int col = 0; col < totalCol; col++) { 
-                    if(word.equals(dictionary.get(col))) {
-//                        System.out.println("~~row: " + row + " ~~col: " + col);
+                        }
+                    } else {
+                        LinkedList<String> currentValueArr = hmap.get(currentKeyArray);
                         
-                        // Total words in data array
-                        float size = data.size();
-                        
-                        // Calculate probability
-                        float p = 1/size;
-
-//                        System.out.println("p = " + p);
-//                        System.out.println("~~~");
-
-                        m[row][col] = (float) (Math.round(p * 100.0) / 100.0);
-                    }
-                }                
-            }
-            
-            row++;
-            
-//            for(int row = 0; 
-////            for (int i = 0; i < row; i++) {
-////                char firstChar = key.charAt(0);
-////                
-////                for (int j = 0; j < col; i++) {
-////                
-////                    if(Character.isUpperCase(firstChar)){
-////                        m[0][0] = 1/hmap.get(key).size();
-////                    }
-////                }
-////            }
-        }
-        
-        textGenerator(m);
-    }
-
-    /*
-     * Print out transition matrix
-     */
-    public static void printMatrix(float[][] m) {        
-        for (int i = 0; i < m.length; i++) {
-            for (int j = 0; j < m[i].length; j++) {
-                System.out.print(m[i][j] + " ");
-            }
-            System.out.println();
-        }
-    }
-    
-    /*
-     * Generate a markov text
-     */
-    public static void textGenerator(float[][] m) {
-        printMatrix(m);
-        
-        // Vector to hold the phrase
-        Vector<String> newSentence = new Vector<String>();
-        
-        String nextWord;
-        
-//        for (String key : hmap.keySet()) {
-//            Vector<String> data = hmap.get(key);
-            
-//            int startWordsLen = data.size();
-            
-//            System.out.print(startWordsLen + "\n");
-//            
-//            System.out.print(rnd.nextInt(startWordsLen)+ "\n");
-            
-//            nextWord = data.get(rnd.nextInt(startWordsLen));
-            
-//            System.out.print(nextWord);
-            
-//            newSentence.add(nextWord);
-            
-//            for(int i = 0; i < data.size(); i++) {
-//                String word = data.get(i);
-//            }
-            for (int i = 0; i < m.length; i++) {
-                for (int j = 0; j < m[i].length; j++) {
-                    
-                    float p = m[i][j];
-                    
-                    if(p != 0.00) {
-                        System.out.print(p + " ");
-                    }                    
-                }
-            }
-//        }
-        
-//        System.out.println("New phrase: " + newSentence);	
-        
-        
-
-        	
-    }
-
-//    public static void textGenerator() {
-//
-//        // Vector to hold the phrase
-//        Vector<String> newPhrase = new Vector<String>();
-//
-//        // String for the next word
-//        String nextWord;
-//
-//        // Select the first word
-//        Vector<String> start_words = hmap.get("_start");
-//        
-//        int startWordsLen = start_words.size();
-//        nextWord = start_words.get(rnd.nextInt(startWordsLen));
-//        newPhrase.add(nextWord);
-//
-//        // Keep looping through the words until we've reached the end
-//        while (nextWord.charAt(nextWord.length()-1) != '.') {
-//            Vector<String> wordSelection = hmap.get(nextWord);
-//            
-//            int wordSelectionLen = wordSelection.size();
-//            nextWord = wordSelection.get(rnd.nextInt(wordSelectionLen));
-//            newPhrase.add(nextWord);
-//        }
-//
-//        System.out.println("New phrase: " + newPhrase.toString());	
-//    }
-    
-    public static int countWords(String filename) throws IOException {
-        FileReader fr = new FileReader(filename);
-        BufferedReader br = new BufferedReader(fr); 
-        String line;
-        
-        int sum = 0;
-        
-        while((line = br.readLine()) != null) {
-            String[] words = line.trim().split(" ");
-
-            for (int i=0; i < words.length; i++) {
-                ++sum;
-            }            
-        }
-        
-        sum = sum - 1;
-        
-        return sum;
-    }
-    
-    public static int countLines(String filename) throws IOException {
-        InputStream is = new BufferedInputStream(new FileInputStream(filename));
-        try {
-            byte[] c = new byte[1024];
-            int count = 0;
-            int readChars = 0;
-            boolean empty = true;
-            
-            while ((readChars = is.read(c)) != -1) {
-                empty = false;
-                for (int i = 0; i < readChars; ++i) {
-                    if (c[i] == '\n') {
-                        ++count;
+                        if ((N + order) < dataList.size()) {
+                            int index = N + order;
+                                                        
+                            String nextKey = dataList.get(index).toString();
+                            
+                            if (!currentValueArr.contains(nextKey)) {
+                                currentValueArr.add(nextKey);
+                            }
+                        }
                     }
                 }
             }
-            return (count == 0 && !empty) ? 1 : count;
-        } finally {
-            is.close();
         }
-    }
 
-    public MarkovChain() {
-        this.order = 0;
+
+        textGenerator(hmap, dataList);
     }
+    
+    /**
+     * Generate a list of Markov frequency map
+     * 
+     * @param list
+     */
+    public static void getFrequencyMap(LinkedList<String> list) {
+        for (int N = 0; N < list.size(); N++) {            
+            LinkedList<String> keyArray = new LinkedList<>();
+
+            for (int k = 0; k < order; k++) {
+                int index = N + k;
+                
+                if(N + order <= list.size()) {
+                    String key = list.get(index);
+                    keyArray.add(key);
+                } else {
+                    break;
+                }
+            }
+            
+            if(list.size() - N >= order) {
+                if (!frequencyMap.containsKey(keyArray)) {    
+                    frequencyMap.put(keyArray, 1);
+                } else {
+                    int word_count = frequencyMap.get(keyArray);
+                    word_count++;
+
+                    frequencyMap.put(keyArray, word_count);
+                }
+            } else {
+                break;
+            }
+        }
+        
+        System.out.println("Markov Frequency Map: " + frequencyMap + "\n");
+    }    
+    
+    /**
+     * Generate a list of Markov data
+     * 
+     * @param line
+     * @return 
+     */
+    public static LinkedList<String> getDataList(String line) {
+        // Split character from a word, and put each into a list
+        String[] words = line.trim().split("");
+
+        LinkedList dataList = new LinkedList();
+        
+        for (int i = 0; i < words.length; i++) {
+            String word = words[i];
+
+            for (int k = 0; k < word.length(); k++) {
+                char c = word.charAt(k);
+
+                String currentCharToString = Character.toString(c);
+
+                dataList.add(currentCharToString);
+            }
+        }
+        
+        System.out.println("Markov Data: " + dataList + "\n");
+        
+        return dataList;
+    }    
+    
+    /**
+     * Generate a key array
+     * 
+     * @param N
+     * @param list
+     * @return 
+     */
+    public static LinkedList<String> getKeyArray(int N, LinkedList<String> list) {
+        LinkedList<String> array = new LinkedList<>();
+
+        for (int k = 0; k < order; k++) {
+            int index = N + k;
+            
+            String key = list.get(index);
+            array.add(key);
+        }
+        
+        return array;
+    }
+    
+    /**
+     * Generate next word
+     * 
+     * @param nextWordsArray
+     * @return 
+     */
+    public static String getNextWord(LinkedList nextWordsArray) {         
+        int size = nextWordsArray.size();
+
+        int index = rnd.nextInt(size);
+
+        String nextWord = nextWordsArray.get(index).toString();
+
+        return nextWord;
+    }
+    
+    /**
+     * Generate a Markov text
+     * 
+     * @param hmap
+     * @param dataList
+     */
+    public static void textGenerator(LinkedHashMap<LinkedList<String>, LinkedList<String>> hmap, LinkedList<String> dataList) {
+        System.out.println("Markov Map: " + hmap + "\n");
+        
+        LinkedList<String> chain = new LinkedList<>();
+
+        for (LinkedList keyList : hmap.keySet()) {
+            if (chain.isEmpty()) {                
+                for (int k = 0; k < order; k++) {
+                    int index = k;
+
+                    String currentKey = keyList.get(index).toString();
+
+                    chain.add(currentKey);
+                }
+
+                LinkedList<String> nextWordsList = hmap.get(keyList);
+                
+                String nextWord = getNextWord(nextWordsList);
+
+                chain.add(nextWord);
+            } else {
+                for (int N = 1; N < chain.size(); N++) {
+                    if (chain.size() - N == order) {
+                        LinkedList<String> currentKeyArray = getKeyArray(N, chain);
+
+                        if (hmap.containsKey(currentKeyArray)) {
+                            LinkedList<String> nextWordsList = hmap.get(currentKeyArray);
+
+                            if(nextWordsList.isEmpty()) {
+                                break;
+                            } else {
+                                String nextWord = getNextWord(nextWordsList);
+                                chain.add(nextWord);
+                            }
+                        }
+                    }
+
+                    if (chain.size() == dataList.size()) {   
+                        break;
+                    }
+                }
+            }
+        }
+
+        System.out.println("Markov Chain: " + chain + "\n");
+        
+        printMarkovText(chain);
+                
+        System.out.println("\n");
+    }
+    
+    /**
+     * Generate Markov Text
+     * 
+     * @param chain
+     */
+    public static void printMarkovText(LinkedList<String> chain) {         
+        System.out.print("Markov Text: ");
+        
+        for (int N = 0; N < chain.size(); N++) {
+            System.out.print("" + chain.get(N) + "");
+        }
+    }    
 }
