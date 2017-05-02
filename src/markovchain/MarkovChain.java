@@ -14,7 +14,7 @@ import java.util.*;
  * @version 1.0
  */
 public class MarkovChain {
-    public static int order = 3;
+    public static int order = 2;
 
     // HashMap for freguency
     public static LinkedHashMap<LinkedList<String>, Integer> frequencyMap = new LinkedHashMap<>();        
@@ -22,31 +22,6 @@ public class MarkovChain {
     // Random value
     static Random rnd = new Random();
 
-    /**
-     * main()
-     * 
-     * @param args
-     * @throws FileNotFoundException
-     * @throws IOException 
-     */
-    public static void main(String[] args) throws FileNotFoundException, IOException {
-
-        BufferedReader br = getBufferedReader();
-
-        System.out.println("#################");
-        System.out.println("# order: " + order + "\t#");
-        System.out.println("#################\n");
-        
-        String line;
-        
-        while ((line = br.readLine()) != null) {   
-            System.out.println("######################################");
-            System.out.println("# Original Text: " + line + "\n");
-            
-            markovChain(line);
-        }
-    }
-    
     /**
      * 
      * @return
@@ -66,24 +41,31 @@ public class MarkovChain {
         
         return br;
     }
-
+    
     /**
      * Generate Markov Model
      * 
      * @param line 
+     * @return  
      */
-    public static void markovChain(String line) {
+    public static LinkedList<String> markovChain(String line) {
         // Define a LinkedHashMap 
-        LinkedHashMap<LinkedList<String>, LinkedList<String>> hmap = new LinkedHashMap<>();        
+        LinkedHashMap<LinkedList<String>, LinkedList<String>> hmap = new LinkedHashMap<>();  
+        
+        // Define final Markov Chain
+        LinkedList<String> finalChain;
 
-        // Generating Markov Data
+        // Generate Markov Data
         LinkedList dataList = getDataList(line);
         
-        // Generating Markov Frequency Map
+        // Generate Markov Frequency Map
         getFrequencyMap(dataList);
                 
         for (int N = 0; N < dataList.size(); N++) {
 
+            if(dataList.size() == 1) {
+                break;
+            }
             // Adding the first array 
             if (N == 0) {
                 if (N < dataList.size()) {
@@ -150,7 +132,9 @@ public class MarkovChain {
         }
 
 
-        textGenerator(hmap, dataList);
+        finalChain = textGenerator(hmap, dataList);
+        
+        return finalChain;
     }
     
     /**
@@ -187,7 +171,7 @@ public class MarkovChain {
             }
         }
         
-        System.out.println("Markov Frequency Map: " + frequencyMap + "\n");
+        System.out.println("##\n# Markov Frequency Map (initial): \n#\n#\t" + frequencyMap + "\n##");
     }    
     
     /**
@@ -202,9 +186,7 @@ public class MarkovChain {
 
         LinkedList dataList = new LinkedList();
         
-        for (int i = 0; i < words.length; i++) {
-            String word = words[i];
-
+        for (String word : words) {
             for (int k = 0; k < word.length(); k++) {
                 char c = word.charAt(k);
 
@@ -214,7 +196,7 @@ public class MarkovChain {
             }
         }
         
-        System.out.println("Markov Data: " + dataList + "\n");
+//        System.out.println("Markov Data: " + dataList + "\n");
         
         return dataList;
     }    
@@ -260,56 +242,126 @@ public class MarkovChain {
      * 
      * @param hmap
      * @param dataList
+     * @return 
      */
-    public static void textGenerator(LinkedHashMap<LinkedList<String>, LinkedList<String>> hmap, LinkedList<String> dataList) {
-        System.out.println("Markov Map: " + hmap + "\n");
+    public static LinkedList<String> textGenerator(LinkedHashMap<LinkedList<String>, LinkedList<String>> hmap, LinkedList<String> dataList) {
+        System.out.println("# Markov Map: \n#\n#\t" + hmap + "\n#");
+        
+        int size;
+        int index;
         
         LinkedList<String> chain = new LinkedList<>();
+        LinkedList<String> nextChain = new LinkedList<>();
 
         for (LinkedList keyList : hmap.keySet()) {
-            if (chain.isEmpty()) {                
+            if (chain.isEmpty()) {      
                 for (int k = 0; k < order; k++) {
-                    int index = k;
+                    index = k;
 
                     String currentKey = keyList.get(index).toString();
 
                     chain.add(currentKey);
+                    nextChain.add(currentKey);
                 }
-
-                LinkedList<String> nextWordsList = hmap.get(keyList);
                 
-                String nextWord = getNextWord(nextWordsList);
-
-                chain.add(nextWord);
+                int count = frequencyMap.get(chain);
+                count --;
+                
+                frequencyMap.put(chain, count);
+                
+                LinkedList<String> nextWordsArray = hmap.get(keyList);
+                
+                String nextWord = getNextWord(nextWordsArray);
+                
+                nextChain.removeFirst();
+                nextChain.add(nextWord);
+                
+                int nextCount = frequencyMap.get(nextChain);
+                
+                chain.add(nextWord);                
+                
+                nextCount--;
+                frequencyMap.put(nextChain, nextCount);
             } else {
                 for (int N = 1; N < chain.size(); N++) {
                     if (chain.size() - N == order) {
+                        // Get an array of words based on order
                         LinkedList<String> currentKeyArray = getKeyArray(N, chain);
-
-                        if (hmap.containsKey(currentKeyArray)) {
-                            LinkedList<String> nextWordsList = hmap.get(currentKeyArray);
-
-                            if(nextWordsList.isEmpty()) {
+                        
+                        // Check if HasMap contains array of words
+                        if (hmap.containsKey(currentKeyArray)) {                                                      
+                            LinkedList<String> nextWordsArray = hmap.get(currentKeyArray);
+                            
+                            if(nextWordsArray.isEmpty()) {
                                 break;
-                            } else {
-                                String nextWord = getNextWord(nextWordsList);
-                                chain.add(nextWord);
+                            } else {                                                                
+                                // Guess next word
+                                size = nextWordsArray.size();
+                                
+                                String nextWord;
+                                LinkedList<String> nextKeyArray;
+                                
+                                if(size == 1) {                     
+                                    nextKeyArray = getKeyArray(N, chain);
+                                    nextWord = nextWordsArray.get(0);
+                                    
+                                    nextKeyArray.removeFirst();
+                                    nextKeyArray.add(nextWord);
+
+                                    int nextKeyArrayCount = frequencyMap.get(nextKeyArray);
+                                    
+                                    if(nextKeyArrayCount != 0) {
+                                        chain.add(nextWord);
+
+                                        nextKeyArrayCount--;
+
+                                        frequencyMap.put(nextKeyArray, nextKeyArrayCount);     
+                                    }
+                                } else {
+                                    int chainSize = chain.size();
+                                    int dataSize = dataList.size();
+                                    
+                                    if(chainSize != dataSize) {
+                                        for(int i = 0; i < size; i++) {
+                                            nextKeyArray = getKeyArray(N, chain);
+
+                                            index = rnd.nextInt(size);  
+                                            
+                                            nextWord = nextWordsArray.get(index);
+                                            
+                                            nextKeyArray.removeFirst();
+                                            nextKeyArray.add(nextWord);
+
+                                            int nextKeyArrayCount = frequencyMap.get(nextKeyArray);
+
+                                            if(nextKeyArrayCount != 0) {
+                                                chain.add(nextWord);
+
+                                                nextKeyArrayCount--;
+                                                frequencyMap.put(nextKeyArray, nextKeyArrayCount);   
+                                                
+                                                break;                                                
+                                            }
+                                        }
+                                    } else {
+                                        break;
+                                    }
+                                }
                             }
                         }
-                    }
-
-                    if (chain.size() == dataList.size()) {   
-                        break;
+                        
+//                        System.out.println("frequencyMap: " + frequencyMap);
+//                        System.out.println("\nchain: " + chain + "\n-----------\n");
                     }
                 }
             }
         }
 
-        System.out.println("Markov Chain: " + chain + "\n");
+//        System.out.println("# Markov Frequency Map (final): \n#\n#\t" + frequencyMap + "\n####");
+//        System.out.println("# Markov Chain: \n#\n#\t" + chain + "\n####");
+//        System.out.println("\n");
         
-        printMarkovText(chain);
-                
-        System.out.println("\n");
+        return chain;
     }
     
     /**
@@ -317,11 +369,60 @@ public class MarkovChain {
      * 
      * @param chain
      */
-    public static void printMarkovText(LinkedList<String> chain) {         
-        System.out.print("Markov Text: ");
+    public static void generateMarkovText(LinkedList<String> chain) {         
+        System.out.print("##\n# Markov Text: \t\t");
         
         for (int N = 0; N < chain.size(); N++) {
             System.out.print("" + chain.get(N) + "");
         }
     }    
+    
+    /**
+     * Generate Final Result
+     * 
+     * @param line
+     * @param chain
+     */
+    public static void generateFinalResult(String line, LinkedList<String> chain) {
+        System.out.println("################");
+        System.out.println("# Final Result # ");
+        System.out.println("################");
+        System.out.println("# Original Text: \t" + line.trim());
+        
+        // Generate Markov Text
+        generateMarkovText(chain);
+
+        System.out.println("\n##");
+        System.out.println("# Markov Frequency Map (final): \n#\n#\t" + frequencyMap + "\n#\n###############");
+        System.out.println("\n---");
+    }
+    
+    /**
+     * main()
+     * 
+     * @param args
+     * @throws FileNotFoundException
+     * @throws IOException 
+     */
+    public static void main(String[] args) throws FileNotFoundException, IOException {
+
+        BufferedReader br = getBufferedReader();
+        
+        System.out.println("################");
+        System.out.println("# Order (N): \t\t" + order);
+        
+        String line;
+        
+        LinkedList<String> chain;
+        
+        while ((line = br.readLine()) != null) {               
+//            System.out.println("############");
+//            System.out.println("# Analysis #");
+//            System.out.println("############");
+
+            chain = markovChain(line);
+
+            generateFinalResult(line, chain);
+        }
+    }
 }
