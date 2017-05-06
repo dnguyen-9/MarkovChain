@@ -14,7 +14,9 @@ import java.util.*;
  * @version 1.0
  */
 public class MarkovChain {
-    public static int order = 2;
+    public static int order = 3;
+    
+    public static boolean debug_flag = false;
 
     // HashMap for freguency
     public static LinkedHashMap<LinkedList<String>, Integer> frequencyMap = new LinkedHashMap<>();        
@@ -32,9 +34,9 @@ public class MarkovChain {
         String filePath = new java.io.File("").getAbsolutePath() + "/src/markovchain/text/";
 
         // Get file name
-        String fileName = filePath + "test_3.txt";
-
-//        String line;
+        String fileName = filePath + "test.txt";
+//        String fileName = filePath + "test_2.txt";
+//        String fileName = filePath + "test_3.txt";
 
         FileReader fr = new FileReader(fileName);
         BufferedReader br = new BufferedReader(fr);
@@ -51,6 +53,9 @@ public class MarkovChain {
     public static LinkedList<String> markovChain(String line) {
         // Define a LinkedHashMap 
         LinkedHashMap<LinkedList<String>, LinkedList<String>> hmap = new LinkedHashMap<>();  
+        
+        // Define a LinkedHashMap
+//        LinkedHashMap<LinkedList<String>, LinkedList<String>> fmap = new LinkedHashMap<>();  
         
         // Define final Markov Chain
         LinkedList<String> finalChain;
@@ -171,7 +176,10 @@ public class MarkovChain {
             }
         }
         
-        System.out.println("##\n# Markov Frequency Map (initial): \n#\n#\t" + frequencyMap + "\n##");
+        // Debugging
+        if(debug_flag) {
+            System.out.println("##\n# Markov Frequency Map (initial): \n#\n#\t" + frequencyMap + "\n##");
+        }
     }    
     
     /**
@@ -196,7 +204,10 @@ public class MarkovChain {
             }
         }
         
-//        System.out.println("Markov Data: " + dataList + "\n");
+        // Debugging
+        if(debug_flag) {
+            System.out.println("#\n# Markov Data: \n#\n#\t" + dataList);
+        }
         
         return dataList;
     }    
@@ -209,6 +220,7 @@ public class MarkovChain {
      * @return 
      */
     public static LinkedList<String> getKeyArray(int N, LinkedList<String> list) {
+        // Get array of character based on order
         LinkedList<String> array = new LinkedList<>();
 
         for (int k = 0; k < order; k++) {
@@ -245,12 +257,18 @@ public class MarkovChain {
      * @return 
      */
     public static LinkedList<String> textGenerator(LinkedHashMap<LinkedList<String>, LinkedList<String>> hmap, LinkedList<String> dataList) {
-        System.out.println("# Markov Map: \n#\n#\t" + hmap + "\n#");
+        // Debugging
+        if(debug_flag) {
+            System.out.println("# Markov Map: \n#\n#\t" + hmap + "\n#");
+        }
         
         int size;
         int index;
         
+        // Chain to store data
         LinkedList<String> chain = new LinkedList<>();
+        
+        // Chain to store prospective data
         LinkedList<String> nextChain = new LinkedList<>();
 
         for (LinkedList keyList : hmap.keySet()) {
@@ -369,13 +387,33 @@ public class MarkovChain {
      * 
      * @param chain
      */
-    public static void generateMarkovText(LinkedList<String> chain) {         
-        System.out.print("##\n# Markov Text: \t\t");
+    public static void generateMarkovText(LinkedList<String> chain) {  
+        if(debug_flag) {
+            System.out.print("##\n# Markov Text: \t\t");
+        }
         
         for (int N = 0; N < chain.size(); N++) {
             System.out.print("" + chain.get(N) + "");
         }
-    }    
+    }  
+    
+    /**
+     * Generate Markov Text
+     * 
+     * @param chain
+     * @return 
+     */
+    public static String generateOutput(LinkedList<String> chain) {         
+//        System.out.print("##\n# Markov Text: \t\t");
+
+        String output = null;
+
+        for (int N = 0; N < chain.size(); N++) {
+            output = "" + chain.get(N) + "";
+        }
+        
+        return output;
+    }
     
     /**
      * Generate Final Result
@@ -384,17 +422,22 @@ public class MarkovChain {
      * @param chain
      */
     public static void generateFinalResult(String line, LinkedList<String> chain) {
-        System.out.println("################");
-        System.out.println("# Final Result # ");
-        System.out.println("################");
-        System.out.println("# Original Text: \t" + line.trim());
+//        System.out.println("################");
+//        System.out.println("# Final Result # ");
+        if(debug_flag) {
+            System.out.println("################");
+            System.out.println("# Original Text: \t" + line.trim());
+        }
         
         // Generate Markov Text
         generateMarkovText(chain);
-
-        System.out.println("\n##");
-        System.out.println("# Markov Frequency Map (final): \n#\n#\t" + frequencyMap + "\n#\n###############");
-        System.out.println("\n---");
+        
+        // Debugging
+        if(debug_flag) {
+            System.out.println("\n##");
+            System.out.println("# Markov Frequency Map (final): \n#\n#\t" + frequencyMap + "\n#\n");
+        }
+        System.out.println("\n");
     }
     
     /**
@@ -404,12 +447,14 @@ public class MarkovChain {
      * @throws FileNotFoundException
      * @throws IOException 
      */
-    public static void main(String[] args) throws FileNotFoundException, IOException {
-
+    public static void main(String[] args) throws FileNotFoundException, IOException {        
         BufferedReader br = getBufferedReader();
         
-        System.out.println("################");
-        System.out.println("# Order (N): \t\t" + order);
+        // Debugging
+        if(debug_flag) {
+            System.out.println("################");
+            System.out.println("# Order (N): \t\t" + order);
+        }
         
         String line;
         
@@ -420,8 +465,12 @@ public class MarkovChain {
 //            System.out.println("# Analysis #");
 //            System.out.println("############");
 
+            if(debug_flag) {
+                System.out.println("##\n# Original Text: \t" + line.trim() + "\n##");
+            }
+            
             chain = markovChain(line);
-
+          
             generateFinalResult(line, chain);
         }
     }
